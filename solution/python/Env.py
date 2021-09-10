@@ -1,3 +1,4 @@
+#from Env import CabDriver
 # Import routines
 
 import numpy as np
@@ -16,13 +17,28 @@ class CabDriver():
 
     def __init__(self):
         """initialise your state and define your action space and state space"""
-        self.action_space = 
-        self.state_space = 
-        self.state_init = 
-
+    
+        self.state_space = [(loc,time,day) for loc in range(1,m+1) for time in range(0,t) for day in range(0,d)]
+        self.action_space = [(start, end) 
+                             for start in range(1,m+1) 
+                             for end in range(1,m+1) if start != end or start != 0 or end != 0]
+        self.state_init = random.choice(self.state_space)
+        self.average_requests = {
+            1:2,
+            2:12,
+            3:4,
+            4:7,
+            5:8
+        }
+        
+        # Constants
+        self.LOCATION_INDEX = 0
+        self.TIME_INDEX = 1
+        self.DAY_INDEX = 2
+        
         # Start the first round
         self.reset()
-
+    
 
     ## Encoding state (or state-action) for NN input
 
@@ -45,43 +61,29 @@ class CabDriver():
     def requests(self, state):
         """Determining the number of requests basis the location. 
         Use the table specified in the MDP and complete for rest of the locations"""
-        location = state[0]
-        if location == 0:
-            requests = np.random.poisson(2)
-
-
-
-
-
-
-
+        location = state[self.LOCATION_INDEX]
+        requests = np.random.poisson(self.average_requests[location])
 
         if requests >15:
             requests =15
 
         possible_actions_index = random.sample(range(1, (m-1)*m +1), requests) # (0,0) is not considered as customer request
-        actions = [self.action_space[i] for i in possible_actions_idx]
+        actions = [self.action_space[i] for i in possible_actions_index]
 
         
         actions.append([0,0])
 
         return possible_actions_index,actions   
 
-
-
     def reward_func(self, state, action, Time_matrix):
         """Takes in state, action and Time-matrix and returns the reward"""
         return reward
-
-
-
 
     def next_state_func(self, state, action, Time_matrix):
         """Takes state and action as input and returns next state"""
         return next_state
 
-
-
-
     def reset(self):
         return self.action_space, self.state_space, self.state_init
+
+
