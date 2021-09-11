@@ -36,6 +36,9 @@ class CabDriver():
         self.TIME_INDEX = 1
         self.DAY_INDEX = 2
         
+        self.PICKUP_INDEX = 0
+        self.DROP_INDEX = 1
+        
         # Start the first round
         self.reset()
     
@@ -43,17 +46,35 @@ class CabDriver():
     ## Encoding state (or state-action) for NN input
 
     def state_encod_arch1(self, state):
-        """convert the state into a vector so that it can be fed to the NN. This method converts a given state into a vector format. Hint: The vector is of size m + t + d."""
+        """convert the state into a vector so that it can be fed to the NN. 
+        This method converts a given state into a vector format. 
+        Hint: The vector is of size m + t + d."""
+        
+        state_encod = [0 for _ in range(m+t+d)]
+        state_encod[state[self.LOCATION_INDEX]] = 1
+        state_encod[m+state[self.TIME_INDEX]] = 1
+        state_encod[m+t+state[self.DAY_INDEX]] = 1
 
         return state_encod
 
 
     # Use this function if you are using architecture-2 
-    # def state_encod_arch2(self, state, action):
-    #     """convert the (state-action) into a vector so that it can be fed to the NN. This method converts a given state-action pair into a vector format. Hint: The vector is of size m + t + d + m + m."""
+    def state_encod_arch2(self, state, action):
+        """convert the (state-action) into a vector so that it can be fed to the NN. 
+        This method converts a given state-action pair into a vector format. 
+        Hint: The vector is of size m + t + d + m + m."""
 
+        state_encod = [0 for _ in range(m+t+d+m+m)]
+        state_encod[state[self.LOCATION_INDEX]] = 1
+        state_encod[m+state[self.TIME_INDEX]] = 1
+        state_encod[m+t+state[self.DAY_INDEX]] = 1
         
-    #     return state_encod
+        if (action[self.PICKUP_INDEX] != 0):
+            state_encod[m+t+d+action[self.PICKUP_INDEX]] = 1
+        if (action[self.DROP_INDEX] != 0):
+            state_encod[m+t+d+m+action[self.DROP_INDEX]] = 1
+        
+        return state_encod
 
 
     ## Getting number of requests
@@ -69,7 +90,6 @@ class CabDriver():
 
         possible_actions_index = random.sample(range(1, (m-1)*m +1), requests) # (0,0) is not considered as customer request
         actions = [self.action_space[i] for i in possible_actions_index]
-
         
         actions.append([0,0])
 
