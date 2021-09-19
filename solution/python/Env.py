@@ -1,9 +1,9 @@
 #from Env import CabDriver
 # Import routines
 
-import numpy as np
 import math
 import random
+import numpy as np
 
 # Defining hyperparameters
 m = 5 # number of cities, ranges from 1 ..... m
@@ -15,7 +15,7 @@ R = 9 # per hour revenue from a passenger
 
 class CabDriver():
 
-    def __init__(self):
+    def __init__(self, time_matrix):
         """initialise your state and define your action space and state space"""
     
         self.state_space = [(loc,time,day) for loc in range(0,m) for time in range(0,t) for day in range(0,d)]
@@ -24,14 +24,16 @@ class CabDriver():
                              for end in range(0,m) if start != 0 or end != 0]
         self.state_init = random.choice(self.state_space)
         self.average_requests = {
-            1:2,
-            2:12,
-            3:4,
-            4:7,
-            5:8
+            0:2,
+            1:12,
+            2:4,
+            3:7,
+            4:8
         }
         
-        self.time_matrix = np.load('TM.npy')
+        self.time_matrix = time_matrix
+        self.chargable_time = 0
+        self.non_chargable_time = 0
         
         # Constants
         self.LOCATION_INDEX = 0
@@ -111,7 +113,7 @@ class CabDriver():
     
     def reward_func(self, state, action):
         """Takes in state, action and Time-matrix and returns the reward"""
-        return R * self.charable_time - C * (self.non_chargable_time + self.chargable_time)
+        return R * self.chargable_time - C * (self.non_chargable_time + self.chargable_time)
         
     def next_state_func(self, state, action):
         """Takes state and action as input and returns next state"""
@@ -142,6 +144,8 @@ class CabDriver():
         return next_state
 
     def reset(self):
+        self.non_chargable_time = 0
+        self.chargable_time = 0
         return self.action_space, self.state_space, self.state_init
 
 
