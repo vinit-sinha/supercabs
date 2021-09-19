@@ -92,11 +92,12 @@ class CabDriver():
         if requests >15:
             requests =15
 
-        possible_actions_index = random.sample(range(1, (m-1)*m +1), requests) # (0,0) is not considered as customer request
+        possible_actions_index = random.sample(range(0, (m-1)*m +1), requests) # (0,0) is not considered as customer request
         actions = [self.action_space[i] for i in possible_actions_index]
         
-        actions.append([0,0])
-
+        actions.append((0,0))
+        possible_actions_index.append(0)
+        
         return possible_actions_index,actions   
 
     def _is_offline(self, pickup_loc, drop_loc):
@@ -113,8 +114,12 @@ class CabDriver():
     
     def reward_func(self, state, action):
         """Takes in state, action and Time-matrix and returns the reward"""
-        return R * self.chargable_time - C * (self.non_chargable_time + self.chargable_time)
-        
+        revenue_generating_time = self.chargable_time
+        total_time = self.non_chargable_time + self.chargable_time
+        revenue = R * revenue_generating_time
+        cost = C * total_time
+        return revenue - cost, total_time
+            
     def next_state_func(self, state, action):
         """Takes state and action as input and returns next state"""
         
