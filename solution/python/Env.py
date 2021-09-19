@@ -18,10 +18,10 @@ class CabDriver():
     def __init__(self):
         """initialise your state and define your action space and state space"""
     
-        self.state_space = [(loc,time,day) for loc in range(1,m+1) for time in range(0,t) for day in range(0,d)]
+        self.state_space = [(loc,time,day) for loc in range(0,m) for time in range(0,t) for day in range(0,d)]
         self.action_space = [(start, end) 
-                             for start in range(1,m+1) 
-                             for end in range(1,m+1) if start != end or start != 0 or end != 0]
+                             for start in range(0,m) 
+                             for end in range(0,m) if start != 0 or end != 0]
         self.state_init = random.choice(self.state_space)
         self.average_requests = {
             1:2,
@@ -30,6 +30,8 @@ class CabDriver():
             4:7,
             5:8
         }
+        
+        self.time_matrix = np.load('TM.npy')
         
         # Constants
         self.LOCATION_INDEX = 0
@@ -95,12 +97,48 @@ class CabDriver():
 
         return possible_actions_index,actions   
 
-    def reward_func(self, state, action, Time_matrix):
+    def _is_offline(self, pickup_loc, drop_loc):
+        return pickup_loc == 0 and drop_loc == 0
+    
+    def _already_at_pickup(self, curr_loc, pickup_loc):
+        return curr_loc == pickup_loc
+    
+    def _travel(self, from_loc, to_loc, curr_time, curr_day):
+        time_taken = self.time_matrix[from_loc][to_loc][curr_time][curr_day]
+        new_day = int(( curr_day + ( time_taken  % 24 ) ) % 7)
+        new_time = int(( curr_day + time_taken ) // 24)
+        return time_taken, [to_loc, new_time, new_day]
+    
+    def reward_func(self, state, action):
         """Takes in state, action and Time-matrix and returns the reward"""
-        return reward
-
-    def next_state_func(self, state, action, Time_matrix):
+        return R * self.charable_time - C * (self.non_chargable_time + self.chargable_time)
+        
+    def next_state_func(self, state, action):
         """Takes state and action as input and returns next state"""
+        
+        curr_loc, curr_time, curr_day = state 
+        pickup_loc, drop_loc = action
+        
+       
+        if self._is_offline(pickup_loc, drop_loc):
+            wait_time, next_state = self._travel(curr_loc, curr_loc, curr_time, curr_day)
+            transit_time = 0
+            ride_time = 0
+            
+        elif self._already_at_pickup(curr_loc, pickup_loc):
+            wait_time = 0
+            transit_time = 0
+            ride_time, next_state = self._travel(curr_loc, drop_loc, curr_time, curr_day)
+            
+        else: # Cab driver is neither offline nor already at pickup. 
+            wait_time = 0
+            transit_time, [curr_loc, curr_time, curr_day] = self._travel(curr_loc, pickup_loc, curr_time, curr_day)
+            ride_time, next_state = self._travel(pickup_loc, drop_loc, curr_time, curr_day)
+        
+        self.non_chargable_time = wait_time + transit_time
+        self.chargable_time = ride_time
+        
+        
         return next_state
 
     def reset(self):
